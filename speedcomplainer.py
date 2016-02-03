@@ -5,12 +5,15 @@ from datetime import datetime
 import daemon
 import signal
 import threading
+import twitter
+import json 
 
 shutdownFlag = False
 
 def main(filename, argv):
     print "======================================"
-    print " Starting Network Monitor!"
+    print " Starting Speed Complainer!           "
+    print " Lets get noisy!                      "
     print "======================================"
 
     global shutdownFlag
@@ -86,10 +89,12 @@ class PingTest(threading.Thread):
 class SpeedTest(threading.Thread):
     def __init__(self):
         super(SpeedTest, self).__init__()
+	self.config = json.load(open('./config.json'))
 
     def run(self):
         speedTestResults = self.doSpeedTest()
         self.logSpeedTestResults(speedTestResults)
+	self.tweetResults(speedTestResults)
 
     def doSpeedTest(self):
         # run a speed test
@@ -114,13 +119,18 @@ class SpeedTest(threading.Thread):
         return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': downloadResult, 'ping': pingResult }
 
     def logSpeedTestResults(self, speedTestResults):
-	print "Ran Speed Test, Got: %s\n" % speedTestResults
-        # write results to mysql
-        pass
+	if (speedTestResults['downloadResult'] < self.config['complainThreshHold']):
+	    print "Oops, download speed %s, time to complain!" % speedTestResults['downloadResult']
 
     def tweetResults(self, speedTestResults):
-        pass
-
+	if (speedTestResults['downloadResult'] < self.config['complainThreshHold']):
+	    message = "Hey %s why is my download speed %s Mb/s when I pay for %s MBit/sec??!? $100+/month for this? #shaw #alberta" % (self.config['tweetTo'], speedTestResults['downloadResult'], self.config['internetSpeed'])
+	    api = twitter.Api(consumer_key=self.config['twitter']['twitterConsumerKey'],
+                      consumer_secret=self.config['twitter']['twitterConsumerSecret'],
+                      access_token_key=self.config['twitter']['twitterToken'],
+                      access_token_secret=self.config['twitter']['twitterTokenSecret'])
+	    if api:
+		    status = api.PostUpdate(message)
 
 class DaemonApp():
     def __init__(self, pidFilePath, stdout_path='/dev/null', stderr_path='/dev/null'):
