@@ -124,7 +124,7 @@ class SpeedTest(threading.Thread):
         pass
 
     def tweetResults(self, speedTestResults):
-        thresholdMessages = self.config['tweetThreshHolds']
+        thresholdMessages = self.config['tweetThresholds']
         message = None
         for (threshold, messages) in thresholdMessages.items():
             threshold = float(threshold)
@@ -138,7 +138,7 @@ class SpeedTest(threading.Thread):
                             access_token_secret=self.config['twitter']['twitterTokenSecret'])
             if api:
                 status = api.PostUpdate(message)
-        
+
 class DaemonApp():
     def __init__(self, pidFilePath, stdout_path='/dev/null', stderr_path='/dev/null'):
         self.stdin_path = '/dev/null'

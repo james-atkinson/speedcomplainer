@@ -1,11 +1,23 @@
 {
     "twitter": {
-        "twitterToken": "", 
-        "twitterConsumerKey": "", 
-        "twitterTokenSecret": "", 
+        "twitterToken": "",
+        "twitterConsumerKey": "",
+        "twitterTokenSecret": "",
         "twitterConsumerSecret": ""
     },
     "tweetTo": "",
-    "internetSpeed": 50,
-    "complainThreshHold": 12.5,
+    "internetSpeed": "50",
+    "tweetThresholds": {
+        "5": [
+            "Hey {tweetTo} I'm paying for {internetSpeed}Mb/s but getting only {downloadResult} Mb/s?!? Shame.",
+            "Oi! {tweetTo} $100+/month for {internetSpeed}Mbit/s and I only get {downloadResult} Mbit/s? How does that seem fair?"
+        ],
+        "12.5": [
+            "Uhh {tweetTo} for $100+/month I expect better than {downloadResult}Mbit/s when I'm paying for {internetSpeed}Mbit/s. Fix your network!",
+            "Hey {tweetTo} why am I only getting {downloadResult}Mb/s when I pay for {internetSpeed}Mb/s? $100+/month for this??"
+        ],
+        "25": [
+            "Well {tweetTo} I guess {downloadResult}Mb/s is better than nothing, still not worth $100/mnth when I expect {internetSpeed}Mb/s"
+        ]
+    }
 }
