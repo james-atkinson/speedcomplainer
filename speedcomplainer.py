@@ -7,6 +7,7 @@ import signal
 import threading
 import twitter
 import json 
+import random
 
 shutdownFlag = False
 
@@ -89,49 +90,55 @@ class PingTest(threading.Thread):
 class SpeedTest(threading.Thread):
     def __init__(self):
         super(SpeedTest, self).__init__()
-	self.config = json.load(open('./config.json'))
+        self.config = json.load(open('./config.json'))
 
     def run(self):
         speedTestResults = self.doSpeedTest()
         self.logSpeedTestResults(speedTestResults)
-	self.tweetResults(speedTestResults)
+        self.tweetResults(speedTestResults)
 
     def doSpeedTest(self):
         # run a speed test
-	result = os.popen("/usr/local/bin/speedtest-cli --simple").read()
-	if 'Cannot' in result:
-		return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
+        result = os.popen("/usr/local/bin/speedtest-cli --simple").read()
+        if 'Cannot' in result:
+            return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
 
-	# Result:	
-	# Ping: 529.084 ms
-	# Download: 0.52 Mbit/s
-	# Upload: 1.79 Mbit/s
-	
-	resultSet = result.split('\n');
-	pingResult = resultSet[0];
-	downloadResult = resultSet[1];
-	uploadResult = resultSet[2];
+        # Result:
+        # Ping: 529.084 ms
+        # Download: 0.52 Mbit/s
+        # Upload: 1.79 Mbit/s
 
-	pingResult = float(pingResult.replace('Ping: ', '').replace(' ms', ''))
-	downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbit/s', ''))
-	uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbit/s', ''))
-	
+        resultSet = result.split('\n')
+        pingResult = resultSet[0]
+        downloadResult = resultSet[1]
+        uploadResult = resultSet[2]
+
+        pingResult = float(pingResult.replace('Ping: ', '').replace(' ms', ''))
+        downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbit/s', ''))
+        uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbit/s', ''))
+
         return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': downloadResult, 'ping': pingResult }
 
     def logSpeedTestResults(self, speedTestResults):
-	if (speedTestResults['downloadResult'] < self.config['complainThreshHold']):
-	    print "Oops, download speed %s, time to complain!" % speedTestResults['downloadResult']
+        print speedTestResults
+        pass
 
     def tweetResults(self, speedTestResults):
-	if (speedTestResults['downloadResult'] < self.config['complainThreshHold']):
-	    message = "Hey %s why is my download speed %s Mb/s when I pay for %s MBit/sec??!? $100+/month for this? #shaw #alberta" % (self.config['tweetTo'], speedTestResults['downloadResult'], self.config['internetSpeed'])
-	    api = twitter.Api(consumer_key=self.config['twitter']['twitterConsumerKey'],
-                      consumer_secret=self.config['twitter']['twitterConsumerSecret'],
-                      access_token_key=self.config['twitter']['twitterToken'],
-                      access_token_secret=self.config['twitter']['twitterTokenSecret'])
-	    if api:
-		    status = api.PostUpdate(message)
+        thresholdMessages = self.config['tweetThreshHolds']
+        message = None
+        for (threshold, messages) in thresholdMessages.items():
+            threshold = float(threshold)
+            if speedTestResults['downloadResult'] < threshold:
+                message = messages[random.randint(0, len(messages) - 1)].replace('{tweetTo}', self.config['tweetTo']).replace('{internetSpeed}', self.config['internetSpeed']).replace('{downloadResult}', str(speedTestResults['downloadResult']))
 
+        if message:
+            api = twitter.Api(consumer_key=self.config['twitter']['twitterConsumerKey'],
+                            consumer_secret=self.config['twitter']['twitterConsumerSecret'],
+                            access_token_key=self.config['twitter']['twitterToken'],
+                            access_token_secret=self.config['twitter']['twitterTokenSecret'])
+            if api:
+                status = api.PostUpdate(message)
+        
 class DaemonApp():
     def __init__(self, pidFilePath, stdout_path='/dev/null', stderr_path='/dev/null'):
         self.stdin_path = '/dev/null'
