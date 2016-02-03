@@ -1,7 +1,7 @@
 # speedcomplainer
 A python app that will test your internet connection and then complain to your service provider (and log to a data store if you'd like)
 
-# Configuration
+## Configuration
 Configuration is handled by a basic JSON file. Things that can be configured are:
 * twitter
  * twitterToken: This is your app access token
@@ -32,7 +32,7 @@ Threshold Example (remember to limit your messages to 140 characters or less!):
     }
 ```
 
-# Usage
+## Usage
 > python speedcomplainer.py
 
 Or to run in the background:
