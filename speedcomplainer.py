@@ -53,7 +53,7 @@ class Monitor():
             self.runPingTest()
             self.lastPingCheck = datetime.now()
 
-        if not self.lastSpeedTest or (datetime.now() - self.lastPingCheck).total_seconds() >= 3600:
+        if not self.lastSpeedTest or (datetime.now() - self.lastSpeedTest).total_seconds() >= 3600:
             self.runSpeedTest()
             self.lastSpeedTest = datetime.now()
 
