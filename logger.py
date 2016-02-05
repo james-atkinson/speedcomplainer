@@ -12,5 +12,5 @@ class CsvLogger(object):
         self.filename = filename
 
     def log(self, logItems):
-        with open(self.filename, "w+") as logfile:
+        with open(self.filename, "a") as logfile:
             logfile.write("%s\n" % ','.join(logItems))
