@@ -8,6 +8,7 @@ import threading
 import twitter
 import json 
 import random
+from logger import Logger
 
 shutdownFlag = False
 
@@ -71,6 +72,8 @@ class PingTest(threading.Thread):
         self.numPings = numPings
         self.pingTimeout = pingTimeout
         self.maxWaitTime = maxWaitTime
+        self.config = json.load(open('./config.json'))
+        self.logger = Logger(self.config['log']['type'], { 'filename': self.config['log']['files']['ping'] })
 
     def run(self):
         pingResults = self.doPingTest()
@@ -84,13 +87,13 @@ class PingTest(threading.Thread):
         return { 'date': datetime.now(), 'success': success }
 
     def logPingResults(self, pingResults):
-        pass
-
+        self.logger.log([ pingResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(pingResults['success'])])
 
 class SpeedTest(threading.Thread):
     def __init__(self):
         super(SpeedTest, self).__init__()
         self.config = json.load(open('./config.json'))
+        self.logger = Logger(self.config['log']['type'], { 'filename': self.config['log']['files']['speed'] })
 
     def run(self):
         speedTestResults = self.doSpeedTest()
@@ -120,8 +123,8 @@ class SpeedTest(threading.Thread):
         return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': downloadResult, 'ping': pingResult }
 
     def logSpeedTestResults(self, speedTestResults):
-        print speedTestResults
-        pass
+        self.logger.log([ speedTestResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(speedTestResults['uploadResult']), str(speedTestResults['downloadResult']), str(speedTestResults['ping']) ])
+
 
     def tweetResults(self, speedTestResults):
         thresholdMessages = self.config['tweetThresholds']

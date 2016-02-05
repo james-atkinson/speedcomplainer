@@ -19,5 +19,12 @@
         "25": [
             "Well {tweetTo} I guess {downloadResult}Mb/s is better than nothing, still not worth $100/mnth when I expect {internetSpeed}Mb/s"
         ]
+    },
+    "log": {
+        "type": "csv",
+        "files": {
+            "ping": "pingresults.csv",
+            "speed": "speedrestuls.csv"
+        }
     }
 }
