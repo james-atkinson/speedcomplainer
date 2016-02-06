@@ -1,0 +1,5 @@
+####### Requirements for Speed Test #######
+twilio
+speedtest-cli
+python-daemon
+twitter
