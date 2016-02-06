@@ -20,6 +20,17 @@
             "Well {tweetTo} I guess {downloadResult}Mb/s is better than nothing, still not worth $100/mnth when I expect {internetSpeed}Mb/s"
         ]
     },
+    "twilio": {
+      "account": "",
+      "token": ""
+    },
+    "smsTo": "+15555551234",
+    "smsFrom": "+15555551234",
+    "smsThresholds": {
+        "500": [
+            "Current speed test shows {downloadResult}Mbps."
+        ]
+    },
     "log": {
         "type": "csv",
         "files": {
