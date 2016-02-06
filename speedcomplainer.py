@@ -6,23 +6,23 @@ import daemon
 import signal
 import threading
 import twitter
-import json 
+import json
 import random
+from twilio.rest import TwilioRestClient
 from logger import Logger
 
 shutdownFlag = False
 
 def main(filename, argv):
-    print "======================================"
-    print " Starting Speed Complainer!           "
-    print " Lets get noisy!                      "
-    print "======================================"
+    print("======================================")
+    print(" Starting Speed Complainer!           ")
+    print(" Lets get noisy!                      ")
+    print("======================================")
 
     global shutdownFlag
     signal.signal(signal.SIGINT, shutdownHandler)
 
     monitor = Monitor()
-
     while not shutdownFlag:
         try:
 
@@ -34,14 +34,14 @@ def main(filename, argv):
                 time.sleep(1)
 
         except Exception as e:
-            print 'Error: %s' % e
+            print('Error: %s' % e)
             sys.exit(1)
 
     sys.exit()
 
 def shutdownHandler(signo, stack_frame):
     global shutdownFlag
-    print 'Got shutdown signal (%s: %s).' % (signo, stack_frame)
+    print('Got shutdown signal (%s: %s).' % (signo, stack_frame))
     shutdownFlag = True
 
 class Monitor():
@@ -89,19 +89,21 @@ class PingTest(threading.Thread):
     def logPingResults(self, pingResults):
         self.logger.log([ pingResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(pingResults['success'])])
 
+
 class SpeedTest(threading.Thread):
     def __init__(self):
         super(SpeedTest, self).__init__()
-        self.config = json.load(open('./config.json'))
+        self.config = json.load(open('config.json'))
         self.logger = Logger(self.config['log']['type'], { 'filename': self.config['log']['files']['speed'] })
 
     def run(self):
         speedTestResults = self.doSpeedTest()
         self.logSpeedTestResults(speedTestResults)
+        self.smsResults(speedTestResults)
         self.tweetResults(speedTestResults)
 
     def doSpeedTest(self):
-        # run a speed test
+        # Run a speed test
         result = os.popen("/usr/local/bin/speedtest-cli --simple").read()
         if 'Cannot' in result:
             return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
@@ -125,8 +127,8 @@ class SpeedTest(threading.Thread):
     def logSpeedTestResults(self, speedTestResults):
         self.logger.log([ speedTestResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(speedTestResults['uploadResult']), str(speedTestResults['downloadResult']), str(speedTestResults['ping']) ])
 
-
     def tweetResults(self, speedTestResults):
+        print("Tweeting results.")
         thresholdMessages = self.config['tweetThresholds']
         message = None
         for (threshold, messages) in thresholdMessages.items():
@@ -139,8 +141,30 @@ class SpeedTest(threading.Thread):
                             consumer_secret=self.config['twitter']['twitterConsumerSecret'],
                             access_token_key=self.config['twitter']['twitterToken'],
                             access_token_secret=self.config['twitter']['twitterTokenSecret'])
+
             if api:
                 status = api.PostUpdate(message)
+
+    def smsResults(self, speedTestResults):
+        print("Sending results via SMS.")
+        thresholdMessages = self.config['smsThresholds']
+        message = None
+        for (threshold, messages) in thresholdMessages.items():
+            threshold = float(threshold)
+            if speedTestResults['downloadResult'] < threshold:
+                message = messages[0].replace('{internetSpeed}', self.config['internetSpeed']).replace('{downloadResult}', str(speedTestResults['downloadResult']))
+
+        if message:
+            account = self.config['twilio']['account']
+            token = self.config['twilio']['token']
+
+            client = TwilioRestClient(account, token)
+
+            client.messages.create(
+                to=self.config['smsTo'],
+                from_=self.config['smsFrom'],
+                body=message
+            )
 
 class DaemonApp():
     def __init__(self, pidFilePath, stdout_path='/dev/null', stderr_path='/dev/null'):
@@ -167,6 +191,3 @@ if __name__ == '__main__':
     dRunner.daemon_context.umask = 0o002
     dRunner.daemon_context.signal_map = { signal.SIGTERM: 'terminate', signal.SIGUP: 'terminate' }
     dRunner.do_action()
-
-
-
