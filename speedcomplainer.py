@@ -101,26 +101,31 @@ class SpeedTest(threading.Thread):
         self.tweetResults(speedTestResults)
 
     def doSpeedTest(self):
-        # run a speed test
-        result = os.popen("/usr/local/bin/speedtest-cli --simple").read()
-        if 'Cannot' in result:
+        maxdllist=[]
+        for _ in range(3):
+           # run a speed test
+           result = os.popen("/home/debug/.local/bin/speedtest-cli --simple").read()
+           if 'Cannot' in result:
             return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
 
-        # Result:
-        # Ping: 529.084 ms
-        # Download: 0.52 Mbit/s
-        # Upload: 1.79 Mbit/s
+           # Result:
+           # Ping: 529.084 ms
+           # Download: 0.52 Mbit/s
+           # Upload: 1.79 Mbit/s
 
-        resultSet = result.split('\n')
-        pingResult = resultSet[0]
-        downloadResult = resultSet[1]
-        uploadResult = resultSet[2]
+           resultSet = result.split('\n')
+           pingResult = resultSet[0]
+           downloadResult = resultSet[1]
+           uploadResult = resultSet[2]
 
-        pingResult = float(pingResult.replace('Ping: ', '').replace(' ms', ''))
-        downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbit/s', ''))
-        uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbit/s', ''))
-
-        return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': downloadResult, 'ping': pingResult }
+           pingResult = float(pingResult.replace('Ping: ', '').replace(' ms', ''))
+           downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbit/s', ''))
+           uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbit/s', ''))
+           maxdllist.append(downloadResult)
+        maxdl=max(maxdllist)
+        print "choices: ", maxdllist, "the max: ", maxdl
+        
+        return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': maxdl, 'ping': pingResult }
 
     def logSpeedTestResults(self, speedTestResults):
         self.logger.log([ speedTestResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(speedTestResults['uploadResult']), str(speedTestResults['downloadResult']), str(speedTestResults['ping']) ])
