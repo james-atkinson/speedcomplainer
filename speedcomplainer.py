@@ -4,13 +4,16 @@ import time
 from datetime import datetime
 import daemon
 import signal
+import re
 import threading
 import twitter
 import json 
 import random
+import subprocess
 from logger import Logger
 
 shutdownFlag = False
+
 
 def main(filename, argv):
     print "======================================"
@@ -39,10 +42,12 @@ def main(filename, argv):
 
     sys.exit()
 
+
 def shutdownHandler(signo, stack_frame):
     global shutdownFlag
     print 'Got shutdown signal (%s: %s).' % (signo, stack_frame)
     shutdownFlag = True
+
 
 class Monitor():
     def __init__(self):
@@ -65,6 +70,7 @@ class Monitor():
     def runSpeedTest(self):
         speedThread = SpeedTest()
         speedThread.start()
+
 
 class PingTest(threading.Thread):
     def __init__(self, numPings=3, pingTimeout=2, maxWaitTime=6):
@@ -89,6 +95,7 @@ class PingTest(threading.Thread):
     def logPingResults(self, pingResults):
         self.logger.log([ pingResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(pingResults['success'])])
 
+
 class SpeedTest(threading.Thread):
     def __init__(self):
         super(SpeedTest, self).__init__()
@@ -101,8 +108,9 @@ class SpeedTest(threading.Thread):
         self.tweetResults(speedTestResults)
 
     def doSpeedTest(self):
-        # run a speed test
-        result = os.popen("/usr/local/bin/speedtest-cli --simple").read()
+        # Find speedtest-cli and run test
+        cli_path = subprocess.check_output('which speedtest-cli', shell=True)
+        result = os.popen("{0} --simple".format(cli_path.replace('\n', ''))).read()
         if 'Cannot' in result:
             return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
 
@@ -116,15 +124,17 @@ class SpeedTest(threading.Thread):
         downloadResult = resultSet[1]
         uploadResult = resultSet[2]
 
-        pingResult = float(pingResult.replace('Ping: ', '').replace(' ms', ''))
-        downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbit/s', ''))
-        uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbit/s', ''))
+        # RegEx Pattern
+        pattern = "\d+\.\d+"
+
+        pingResult = float(re.findall(pattern, pingResult)[0])
+        downloadResult = float(re.findall(pattern, downloadResult)[0])
+        uploadResult = float(re.findall(pattern, uploadResult)[0])
 
         return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': downloadResult, 'ping': pingResult }
 
     def logSpeedTestResults(self, speedTestResults):
-        self.logger.log([ speedTestResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(speedTestResults['uploadResult']), str(speedTestResults['downloadResult']), str(speedTestResults['ping']) ])
-
+        self.logger.log([ speedTestResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(speedTestResults['uploadResult']), str(speedTestResults['downloadResult']), str(speedTestResults['ping'])])
 
     def tweetResults(self, speedTestResults):
         thresholdMessages = self.config['tweetThresholds']
