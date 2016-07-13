@@ -135,7 +135,7 @@ class SpeedTest(threading.Thread):
                 message = messages[random.randint(0, len(messages) - 1)].replace('{tweetTo}', self.config['tweetTo']).replace('{internetSpeed}', self.config['internetSpeed']).replace('{downloadResult}', str(speedTestResults['downloadResult']))
 
         if message:
-            api = twitter.Api(consumer_key=self.config['twitter']['twitterConsumerKey'],
+            api = twitter.api(consumer_key=self.config['twitter']['twitterConsumerKey'],
                             consumer_secret=self.config['twitter']['twitterConsumerSecret'],
                             access_token_key=self.config['twitter']['twitterToken'],
                             access_token_secret=self.config['twitter']['twitterTokenSecret'])
