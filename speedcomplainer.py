@@ -8,7 +8,7 @@ import threading
 import json 
 import random
 from logger import Logger
-import oauth as OAuth
+#import oauth as OAuth
 from twython import Twython
 shutdownFlag = False
 
