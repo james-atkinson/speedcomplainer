@@ -5,7 +5,6 @@ from datetime import datetime
 import daemon
 import signal
 import threading
-import twitter
 import json 
 import random
 from logger import Logger
@@ -23,9 +22,10 @@ def main(filename, argv):
     signal.signal(signal.SIGINT, shutdownHandler)
 
     monitor = Monitor()
-
+    time.sleep(10)
     while not shutdownFlag:
         try:
+            print ("*********************##**************************")
             print("runing monitor time: "+str(datetime.now()))
             monitor.run()
             #print("runed monitor time: ",datetime.now())
@@ -34,7 +34,7 @@ def main(filename, argv):
                     break
                 time.sleep(10)
                 #print("click sleep time: ",datetime.now())
-
+            print ("####################**#######################")
         except Exception as e:
             print 'Error01: %s' % e
             sys.exit(1)
@@ -65,6 +65,7 @@ class Monitor():
         TOKEN_KEY=self.config['twitter']['twitterToken']
         twitter = Twython(CON_SEC_KEY, CON_SEC,TOKEN_KEY, TOKEN)
         twitter.update_status(status='See how easy using Twython is!')
+        #import twitter
         #my_auth = twitter.OAuth(TOKEN,TOKEN_KEY,CON_SEC,CON_SEC_KEY)
         #twit = twitter.Twitter(auth=my_auth)
         #twit.statuses.update(status="I'm tweeting from Python!")
@@ -75,13 +76,13 @@ class Monitor():
         if not self.lastPingCheck or (datetime.now() - self.lastPingCheck).total_seconds() >= 60:
             self.runPingTest()
             self.lastPingCheck = datetime.now()
-            print("ping test executed")
+            print("ping test started")
 
         #if not self.lastSpeedTest or (datetime.now() - self.lastSpeedTest).total_seconds() >= 3600:
         if not self.lastSpeedTest or (datetime.now() - self.lastSpeedTest).total_seconds() >= 300:
             self.runSpeedTest()
             self.lastSpeedTest = datetime.now()
-            print("Speed test executed")
+            print("Speed test started\n")
 
     def runPingTest(self):
         pingThread = PingTest()
@@ -105,11 +106,23 @@ class PingTest(threading.Thread):
         self.logPingResults(pingResults)
 
     def doPingTest(self):
-        response = os.system("ping -c %s -W %s -w %s 8.8.8.8 > /dev/null 2>&1" % (self.numPings, (self.pingTimeout * 1000), self.maxWaitTime))
+        print ("["+str(self.ident)+"] executando ping \n")
+        #import pdb; pdb.set_trace()
+        if "win" in sys.platform:
+            #Windows response
+            response = os.system("ping -n %s -w %s www.google.com " % (self.numPings, self.maxWaitTime))
+        elif "linux" in sys.platform:
+            #linux response
+            response = os.system("ping -c %s -W %s -w %s 8.8.8.8 > /dev/null 2>&1" % (self.numPings, (self.pingTimeout * 1000), self.maxWaitTime))
+        else:
+            print("["+str(self.ident)+"] Sistema nao suportado")
+            response=1
+        
+        print ("["+(str(self.ident)+"] Response:"+str(response)+"\n"))
         success = 0
         if response == 0:
             success = 1
-        print("success:"+str(success))
+        print("["+str(self.ident)+"] success:"+str(success)+"\n")
         return { 'date': datetime.now(), 'success': success }
 
     def logPingResults(self, pingResults):
@@ -127,9 +140,9 @@ class SpeedTest(threading.Thread):
         self.tweetResults(speedTestResults)
 
     def doSpeedTest(self):
-        print "Starting speedtest"
+        print ("["+str(self.ident)+"] Starting speedtest \n")
         # run a speed test
-        result = os.popen("/usr/local/bin/speedtest-cli --simple").read()
+        result = os.popen("speedtest-cli --simple").read()
         if 'Cannot' in result:
             return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
         print "result: "+str(result)
@@ -140,20 +153,26 @@ class SpeedTest(threading.Thread):
         #import pdb; pdb.set_trace()
         
         resultSet = result.split('\n')
-        pingResult = resultSet[0]
-        downloadResult = resultSet[1]
-        uploadResult = resultSet[2]
-
+        try:
+            pingResult = resultSet[0]
+            downloadResult = resultSet[1]
+            uploadResult = resultSet[2]
+        except Exception as e:
+            pingResult = "Ping: 0.0 ms"
+            downloadResult = "Download: 0.0 Mbit/s"
+            uploadResult = "Upload: 0.0 Mbit/s"
+            print "["+str(self.ident)+"] ErrorISP Tratado: %s" % e
+        
         pingResult = float(pingResult.replace('Ping: ', '').replace(' ms', ''))
         downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbit/s', ''))
         uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbit/s', ''))
 
-        print ("Done speedtest")
+        print ("["+str(self.ident)+"] Done speedtest")
         return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': downloadResult, 'ping': pingResult }
 
     def logSpeedTestResults(self, speedTestResults):
         self.logger.log([ speedTestResults['date'].strftime('%Y-%m-%d %H:%M:%S'), str(speedTestResults['uploadResult']), str(speedTestResults['downloadResult']), str(speedTestResults['ping']) ])
-        print("Done log")
+        print("["+str(self.ident)+"] Done log")
 
 
     def tweetResults(self, speedTestResults):
@@ -161,11 +180,12 @@ class SpeedTest(threading.Thread):
         message = None
         for (threshold, messages) in thresholdMessages.items():
             threshold = float(threshold)
-            if speedTestResults['downloadResult'] < threshold:
-                    #message = messages[random.randint(0, len(messages) - 1)].replace('{tweetTo}', self.config['tweetTo']).replace('{internetSpeed}', self.config['internetSpeed']).replace('{downloadResult}', str(speedTestResults['downloadResult']))
-                    message = messages[0].replace('{tweetTo}', self.config['tweetTo']).replace('{internetSpeed}', self.config['internetSpeed']).replace('{downloadResult}', str(speedTestResults['downloadResult']))
-                    print ("message:",message)
+            if speedTestResults['downloadResult'] < threshold and speedTestResults['downloadResult'] != 0.0:
+                    message = messages[random.randint(0, len(messages) - 1)].replace('{tweetTo}', self.config['tweetTo']).replace('{internetSpeed}', self.config['internetSpeed']).replace('{downloadResult}', str(speedTestResults['downloadResult']))
+                    print ("["+str(self.ident)+"] message:",message)
         if message:
+            
+            #import twitter
             #api = twitter.api(consumer_key=self.config['twitter']['twitterConsumerKey'],
             #                consumer_secret=self.config['twitter']['twitterConsumerSecret'],
             #                access_token_key=self.config['twitter']['twitterToken'],
@@ -187,10 +207,13 @@ class SpeedTest(threading.Thread):
                 #twit.statuses.update(status=message)
                 api.update_status(status=message)
             else:
-                print ("No API")
+                print ("["+str(self.ident)+"] No API")
         else:
-            print ("No message")
-        print("Done tweetResult")
+            if speedTestResults['downloadResult'] == 0.0:
+                print("["+str(self.ident)+"] speedtest-cli: Mensasen nao enviada do por fala de conectividade ou plataforma nao suportada")
+            else:
+                print ("["+str(self.ident)+"] Internet dentro dos padroes estabelecidos")
+        print("["+str(self.ident)+"] Done tweetResult")
 
 class DaemonApp():
     def __init__(self, pidFilePath, stdout_path='/dev/null', stderr_path='/dev/null'):
