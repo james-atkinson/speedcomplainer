@@ -1,0 +1,6 @@
+sudo pip install daemon
+
+sudo pip install twython 
+
+sudo pip install speedtest-cli
+sudo pip install oauth
