@@ -116,6 +116,7 @@ class PingTest(threading.Thread):
             response = os.system("ping -c %s -W %s -w %s 8.8.8.8 > /dev/null 2>&1" % (self.numPings, (self.pingTimeout * 1000), self.maxWaitTime))
         else:
             print("["+str(self.ident)+"] Sistema nao suportado")
+            print("["+str(self.ident)+"] "+str(sys.platform))
             response=1
         
         print ("["+(str(self.ident)+"] Response:"+str(response)+"\n"))
