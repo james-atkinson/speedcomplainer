@@ -110,7 +110,7 @@ class SpeedTest(threading.Thread):
     def doSpeedTest(self):
         # Find speedtest-cli and run test
         cli_path = subprocess.check_output('which speedtest-cli', shell=True)
-        result = os.popen("{0} --simple".format(cli_path.replace('\n', ''))).read()
+        result = os.popen("{0} --simple".format(cli_path.rstrip())).read()
         if 'Cannot' in result:
             return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
 
