@@ -102,7 +102,7 @@ class SpeedTest(threading.Thread):
 
     def doSpeedTest(self):
         # run a speed test
-        result = os.popen("/usr/local/bin/speedtest-cli --simple").read()
+        result = os.popen("speedtest-cli --simple").read()
         if 'Cannot' in result:
             return { 'date': datetime.now(), 'uploadResult': 0, 'downloadResult': 0, 'ping': 0 }
 
