@@ -117,8 +117,8 @@ class SpeedTest(threading.Thread):
         uploadResult = resultSet[2]
 
         pingResult = float(pingResult.replace('Ping: ', '').replace(' ms', ''))
-        downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbit/s', ''))
-        uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbit/s', ''))
+        downloadResult = float(downloadResult.replace('Download: ', '').replace(' Mbits/s', ''))
+        uploadResult = float(uploadResult.replace('Upload: ', '').replace(' Mbits/s', ''))
 
         return { 'date': datetime.now(), 'uploadResult': uploadResult, 'downloadResult': downloadResult, 'ping': pingResult }
 
