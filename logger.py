@@ -4,13 +4,14 @@ class Logger(object):
         if type == 'csv':
             self.logger = CsvLogger(config['filename'])
 
-    def log(self, logItems):
-        self.logger.log(logItems)
+    def log(self, log_items):
+        self.logger.log(log_items)
+
 
 class CsvLogger(object):
     def __init__(self, filename):
         self.filename = filename
 
-    def log(self, logItems):
+    def log(self, log_items):
         with open(self.filename, "a") as logfile:
-            logfile.write("%s\n" % ','.join(logItems))
+            logfile.write("{0}\n".format(','.join(log_items)))
