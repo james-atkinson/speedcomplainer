@@ -1,7 +1,7 @@
-daemon==1.1
-oauthlib==1.1.1
-python-twitter==2.2
-requests==2.10.0
-requests-oauthlib==0.6.1
-speedtest-cli==0.3.4
-wsgiref==0.1.2
+daemon>=1.1
+oauthlib>=1.1.1
+python-twitter>=2.2
+requests>=2.10.0
+requests-oauthlib>=0.6.1
+speedtest-cli>=0.3.4
+wsgiref>=0.1.2
